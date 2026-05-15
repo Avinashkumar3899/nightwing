@@ -1,0 +1,26 @@
+# === Core Backend ===
+fastapi
+uvicorn[standard]
+python-socketio
+python-multipart
+pydantic
+aiosqlite
+
+# === WebRTC ===
+aiortc
+aiohttp
+
+# === Serial Communication (ESP32 via UART) ===
+pyserial
+
+# === Hardware GPIO (Motor Driver L298N on Pi) ===
+RPi.GPIO
+
+# === Utilities ===
+av
+opencv-python-headless
+numpy
+
+# NOTE: picamera2 must be installed via apt, not pip:
+#   sudo apt install -y python3-picamera2
+# NOTE: gpiozero and RPi.GPIO are no longer needed (sensors moved to ESP32)

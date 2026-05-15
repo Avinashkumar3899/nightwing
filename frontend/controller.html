@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#080d17">
+    <title>Nightwing | Robot Controller</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <link rel="stylesheet" href="controller.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="ctrl-header">
+        <div class="header-left">
+            <div class="logo-dot"></div>
+            <span class="logo-text">NIGHTWING</span>
+        </div>
+        <div class="header-right">
+            <span id="conn-badge" class="conn-badge disconnected">● Offline</span>
+        </div>
+    </header>
+
+    <!-- Hazard Overlay (Top Bar & Fullscreen) -->
+    <div id="hazard-bar" class="hazard-bar hidden"></div>
+    <div id="hazard-overlay" class="hazard-overlay hidden">
+        <div class="hazard-content">
+            <span class="hazard-icon">🚨</span>
+            <h2 id="hazard-title">HAZARD DETECTED</h2>
+            <p id="hazard-msg">Check video feed immediately!</p>
+            <button class="hazard-ack" onclick="dismissHazard()">DISMISS</button>
+        </div>
+    </div>
+
+    <!-- Live Video Feed (Mobile View) -->
+    <section class="video-section">
+        <div class="video-container">
+            <video id="remote-video" autoplay playsinline muted></video>
+            <div id="video-placeholder" class="video-placeholder">
+                <div class="loader-spinner"></div>
+                <p>Initializing Live Feed...</p>
+            </div>
+            <div class="stream-badge">LIVE • WebRTC</div>
+        </div>
+    </section>
+
+    <!-- Robot Status -->
+    <section class="status-strip">
+        <div class="status-item">
+            <span class="status-lbl">DIRECTION</span>
+            <span class="status-val" id="dir-display">STOPPED</span>
+        </div>
+        <div class="status-divider"></div>
+        <div class="status-item">
+            <span class="status-lbl">SPEED</span>
+            <span class="status-val" id="spd-display">75%</span>
+        </div>
+        <div class="status-divider"></div>
+        <div class="status-item">
+            <span class="status-lbl">GAS</span>
+            <span class="status-val safe" id="gas-mini">SAFE</span>
+        </div>
+        <div class="status-divider"></div>
+        <div class="status-item">
+            <span class="status-lbl">FIRE</span>
+            <span class="status-val safe" id="fire-mini">SAFE</span>
+        </div>
+    </section>
+
+    <!-- Speed Control -->
+    <section class="speed-section">
+        <label class="speed-label">Speed: <span id="speed-val">75</span>%</label>
+        <input type="range" id="speed-slider" min="20" max="100" value="75" step="5" class="speed-slider">
+    </section>
+
+    <!-- Camera Pan + Tilt -->
+    <section class="speed-section" style="gap:0.6rem;">
+        <label class="speed-label">↔ Pan: <span id="pan-val">90</span>°</label>
+        <input type="range" id="pan-slider" min="0" max="180" value="90" step="5" class="speed-slider">
+        <label class="speed-label" style="margin-top:0.5rem;">↕ Tilt: <span id="ctrl-tilt-val">90</span>°</label>
+        <input type="range" id="tilt-slider" min="30" max="150" value="90" step="5" class="speed-slider">
+        <div style="display:flex; gap:0.5rem; margin-top:0.4rem;">
+            <button class="dpad-btn" style="flex:1;" ontouchstart="quickTilt(150)" onclick="quickTilt(150)">▲ Tilt Up</button>
+            <button class="dpad-btn stop-btn" style="flex:1;" ontouchstart="quickTilt(90)" onclick="quickTilt(90)">⏺ Level</button>
+            <button class="dpad-btn" style="flex:1;" ontouchstart="quickTilt(30)" onclick="quickTilt(30)">▼ Tilt Down</button>
+        </div>
+    </section>
+
+    <!-- D-Pad Controller -->
+    <section class="dpad-section">
+        <div class="dpad">
+            <!-- Row 1: Up -->
+            <div class="dpad-row">
+                <button class="dpad-btn fwd" id="btn-fwd"
+                    ontouchstart="startMove('forward')" ontouchend="stopMove()"
+                    onmousedown="startMove('forward')"  onmouseup="stopMove()">
+                    ▲
+                </button>
+            </div>
+            <!-- Row 2: Left / Stop / Right -->
+            <div class="dpad-row">
+                <button class="dpad-btn left" id="btn-left"
+                    ontouchstart="startMove('left')" ontouchend="stopMove()"
+                    onmousedown="startMove('left')"  onmouseup="stopMove()">
+                    ◀
+                </button>
+                <button class="dpad-btn stop-btn" id="btn-stop" onclick="sendStop()">
+                    ■
+                </button>
+                <button class="dpad-btn right" id="btn-right"
+                    ontouchstart="startMove('right')" ontouchend="stopMove()"
+                    onmousedown="startMove('right')"  onmouseup="stopMove()">
+                    ▶
+                </button>
+            </div>
+            <!-- Row 3: Down -->
+            <div class="dpad-row">
+                <button class="dpad-btn bwd" id="btn-bwd"
+                    ontouchstart="startMove('backward')" ontouchend="stopMove()"
+                    onmousedown="startMove('backward')"  onmouseup="stopMove()">
+                    ▼
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Emergency Brake -->
+    <section class="brake-section">
+        <button class="brake-btn" id="btn-brake" onclick="emergencyBrake()">
+            🛑 EMERGENCY BRAKE
+        </button>
+    </section>
+
+    <!-- Link to main dashboard -->
+    <footer class="ctrl-footer">
+        <a href="/" class="dash-link">← Open Surveillance Dashboard</a>
+    </footer>
+
+    <script src="controller.js"></script>
+</body>
+</html>

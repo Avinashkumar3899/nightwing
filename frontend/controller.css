@@ -1,0 +1,311 @@
+/* ─────────────────────────────────────────────
+   Nightwing — Mobile Robot Controller Styles
+   ───────────────────────────────────────────── */
+
+:root {
+    --bg:          #080d17;
+    --surface:     #0f1929;
+    --card:        #162035;
+    --border:      rgba(255,255,255,0.08);
+    --text-pri:    #f0f4ff;
+    --text-sec:    #7a8fb0;
+    --accent:      #3b82f6;
+    --red:         #ef4444;
+    --orange:      #f59e0b;
+    --green:       #22c55e;
+    --fwd-color:   #3b82f6;
+    --bwd-color:   #6366f1;
+    --lr-color:    #0ea5e9;
+    --stop-color:  #475569;
+    --brake-color: #ef4444;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text-pri);
+    font-family: 'Inter', system-ui, sans-serif;
+    overflow-x: hidden;
+    /* Prevent text selection on hold */
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+}
+
+/* ── HEADER ── */
+.ctrl-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.9rem 1.4rem;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+}
+
+.header-left { display: flex; align-items: center; gap: 0.6rem; }
+
+.logo-dot {
+    width: 9px; height: 9px;
+    background: var(--accent); border-radius: 50%;
+    box-shadow: 0 0 10px var(--accent);
+    animation: pulse-dot 2s infinite;
+}
+
+.logo-text {
+    font-size: 1rem; font-weight: 800;
+    letter-spacing: 0.15em; color: var(--accent);
+}
+
+.conn-badge {
+    font-size: 0.75rem; font-weight: 700;
+    padding: 0.25rem 0.8rem; border-radius: 2rem;
+}
+.conn-badge.connected    { background: rgba(34,197,94,0.15); color: var(--green); }
+.conn-badge.disconnected { background: rgba(239,68,68,0.15); color: var(--red); }
+
+/* ── HAZARD BAR ── */
+.hazard-bar {
+    text-align: center;
+    padding: 0.6rem;
+    font-weight: 700; font-size: 0.85rem;
+    animation: flash 0.6s infinite alternate;
+}
+.hazard-bar.gas-alert  { background: var(--red);    color: #fff; }
+.hazard-bar.fire-alert { background: var(--orange);  color: #fff; }
+
+/* ── STATUS STRIP ── */
+.status-strip {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    padding: 0.9rem 1rem;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    margin-top: 0;
+}
+
+.status-item  { display: flex; flex-direction: column; align-items: center; gap: 0.2rem; }
+.status-lbl   { font-size: 0.6rem; font-weight: 700; letter-spacing: 0.1em; color: var(--text-sec); text-transform: uppercase; }
+.status-val   { font-size: 0.85rem; font-weight: 800; color: var(--text-pri); }
+.status-val.safe  { color: var(--green); }
+.status-val.alert { color: var(--red); }
+.status-divider { width: 1px; height: 30px; background: var(--border); }
+
+/* ── SPEED SECTION ── */
+.speed-section {
+    padding: 1.2rem 2rem 0.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.speed-label {
+    font-size: 0.8rem; font-weight: 600;
+    color: var(--text-sec); text-align: center;
+}
+
+.speed-slider {
+    -webkit-appearance: none;
+    width: 100%; height: 8px;
+    border-radius: 4px;
+    background: linear-gradient(to right, var(--accent) var(--pct, 55%), rgba(255,255,255,0.1) var(--pct, 55%));
+    outline: none; cursor: pointer;
+}
+.speed-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 26px; height: 26px; border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 12px rgba(59,130,246,0.5);
+    cursor: grab;
+}
+
+/* ── D-PAD ── */
+.dpad-section {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 1.5rem 1rem;
+    flex: 1;
+}
+
+.dpad {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.dpad-row {
+    display: flex;
+    gap: 0.6rem;
+    align-items: center;
+    justify-content: center;
+}
+
+.dpad-btn {
+    width: 90px; height: 90px;
+    border: none; border-radius: 18px;
+    font-size: 1.8rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: transform 0.08s, box-shadow 0.1s;
+    color: #fff;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.dpad-btn:active { transform: scale(0.90); }
+
+.dpad-btn.fwd   { background: var(--fwd-color); box-shadow: 0 6px 20px rgba(59,130,246,0.4); }
+.dpad-btn.bwd   { background: var(--bwd-color); box-shadow: 0 6px 20px rgba(99,102,241,0.4); }
+.dpad-btn.left,
+.dpad-btn.right { background: var(--lr-color);  box-shadow: 0 6px 20px rgba(14,165,233,0.4); }
+.dpad-btn.stop-btn {
+    background: var(--stop-color);
+    font-size: 1.4rem;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+}
+
+.dpad-btn.active-press {
+    transform: scale(0.88);
+    filter: brightness(1.3);
+}
+
+/* ── BRAKE ── */
+.brake-section {
+    display: flex;
+    justify-content: center;
+    padding: 0.5rem 2rem 1rem;
+}
+
+.brake-btn {
+    width: 100%;
+    max-width: 360px;
+    padding: 1.1rem;
+    background: var(--brake-color);
+    border: none; border-radius: 14px;
+    color: #fff; font-size: 1.05rem; font-weight: 800;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    box-shadow: 0 6px 24px rgba(239,68,68,0.4);
+    transition: transform 0.08s, box-shadow 0.15s;
+    -webkit-tap-highlight-color: transparent;
+}
+.brake-btn:active { transform: scale(0.96); box-shadow: 0 2px 10px rgba(239,68,68,0.6); }
+
+/* ── FOOTER ── */
+.ctrl-footer {
+    text-align: center;
+    padding: 0.8rem;
+}
+.dash-link {
+    color: var(--text-sec);
+    font-size: 0.78rem;
+    text-decoration: none;
+}
+.dash-link:hover { color: var(--accent); }
+
+/* ── ANIMATIONS ── */
+@keyframes pulse-dot {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.3; }
+}
+@keyframes flash {
+    from { opacity: 1; }
+    to   { opacity: 0.6; }
+}
+
+/* ── VIDEO FEED ── */
+.video-section {
+    padding: 1rem 1rem 0;
+    width: 100%;
+}
+.video-container {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    background: #000;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+}
+#remote-video {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
+}
+.video-placeholder {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: var(--surface);
+    gap: 0.8rem;
+    color: var(--text-sec);
+    text-align: center;
+    padding: 1rem;
+}
+.video-placeholder p { font-size: 0.8rem; font-weight: 600; }
+
+.loader-spinner {
+    width: 28px; height: 28px;
+    border: 3px solid rgba(255,255,255,0.1);
+    border-top: 3px solid var(--accent);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.stream-badge {
+    position: absolute;
+    top: 10px; right: 10px;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(8px);
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.65rem; font-weight: 800;
+    color: #fff; border: 1px solid rgba(255,255,255,0.1);
+}
+
+/* ── HAZARD OVERLAY ── */
+.hazard-overlay {
+    position: fixed;
+    inset: 0; z-index: 9999;
+    background: rgba(239, 68, 68, 0.4);
+    backdrop-filter: blur(20px);
+    display: flex;
+    align-items: center; justify-content: center;
+    padding: 2rem;
+    transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.hazard-overlay.hidden { opacity: 0; pointer-events: none; }
+
+.hazard-content {
+    background: var(--surface);
+    width: 100%; max-width: 320px;
+    padding: 2.5rem 2rem;
+    border-radius: 24px;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    text-align: center;
+    box-shadow: 0 32px 64px rgba(0,0,0,0.6);
+}
+.hazard-icon { font-size: 3rem; margin-bottom: 1.5rem; display: block; filter: drop-shadow(0 0 15px var(--red)); }
+.hazard-content h2 { margin-bottom: 0.5rem; font-size: 1.5rem; font-weight: 800; color: var(--red); }
+.hazard-content p { color: var(--text-sec); margin-bottom: 2rem; line-height: 1.5; font-size: 0.9rem; }
+.hazard-ack {
+    width: 100%; padding: 1rem;
+    background: var(--red); color: #fff;
+    border: none; border-radius: 12px;
+    font-weight: 800; letter-spacing: 0.05em;
+    cursor: pointer; box-shadow: 0 8px 20px rgba(239, 68, 68, 0.4);
+}
+.hazard-ack:active { transform: scale(0.96); }
+
+/* ── LARGE PHONES / LANDSCAPE ── */
+@media (min-height: 700px) {
+    .dpad-btn { width: 100px; height: 100px; }
+}

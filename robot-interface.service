@@ -1,0 +1,25 @@
+[Unit]
+Description=Nightwing - Hazardous Area Surveillance Robot Web Interface
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/nightwing
+ExecStart=/home/pi/nightwing/venv/bin/uvicorn backend.app:sio_app --host 0.0.0.0 --port 8000 --workers 1
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+# Environment
+Environment=PYTHONUNBUFFERED=1
+
+# Safety: ensure GPIO is cleaned up on stop
+ExecStop=/bin/kill -SIGTERM $MAINPID
+KillMode=process
+TimeoutStopSec=10
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Nightwing - Real-time Hazardous Area Surveillance Robot Dashboard">
+    <title>Nightwing | Surveillance Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+</head>
+<body>
+    <!-- Global Alert Banner -->
+    <div id="alert-banner" class="alert-banner hidden" role="alert"></div>
+
+    <!-- Header -->
+    <header class="topbar">
+        <div class="topbar-left">
+            <div class="logo-dot"></div>
+            <span class="logo-text">NIGHTWING</span>
+            <span class="logo-sub">Surveillance System</span>
+            <a href="/controller" class="btn btn-sm secondary" style="margin-left: 15px; font-size: 0.7rem; text-decoration: none; display: flex; align-items: center; gap: 5px;">
+                <i class="fas fa-mobile-alt"></i> Mobile Controller
+            </a>
+        </div>
+        <div class="topbar-right">
+            <div id="storage-indicator" class="storage-card" title="SD Card Usage">
+                <i class="fas fa-hdd"></i>
+                <span id="storage-text" class="storage-percent">--%</span>
+            </div>
+            <div id="battery-indicator" class="battery-card" title="Battery Level">
+                <i id="batt-icon" class="fas fa-battery-full"></i>
+                <span id="batt-text" class="batt-percent">100%</span>
+            </div>
+            <div class="status-divider"></div>
+            <span id="conn-status" class="conn-badge disconnected">● Disconnected</span>
+            <span id="current-time" class="time-display"></span>
+        </div>
+    </header>
+
+    <main class="dashboard-grid">
+
+        <!-- ── Video Feed ── -->
+        <section class="panel video-panel" id="video-section">
+            <div class="video-wrapper">
+                <video id="remote-video" autoplay playsinline muted></video>
+
+                <!-- ── Floating HUD: top-left LIVE badge + top-right controls ── -->
+                <div class="video-hud-overlay">
+                    <div class="video-hud-left">
+                        <span class="live-badge">● LIVE</span>
+                        <span id="recording-indicator" class="hud-badge rec-badge hidden">● REC</span>
+                        <span id="motion-indicator" class="hud-badge motion-badge hidden">⚡ MOTION</span>
+                    </div>
+                    <div class="video-hud-right">
+                        <button class="hud-btn" id="btn-motion-detect" title="Toggle Motion Detection">⚡ Motion</button>
+                        <div class="zoom-controls">
+                            <button class="hud-btn" id="btn-zoom-out" title="Zoom Out">−</button>
+                            <span class="hud-badge" id="zoom-level-badge">1×</span>
+                            <button class="hud-btn" id="btn-zoom-in" title="Zoom In">+</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="video-placeholder" id="video-placeholder">
+                    <div class="placeholder-icon">📷</div>
+                    <p>Connecting to camera…</p>
+                </div>
+                <!-- Fullscreen Hazard Overlay -->
+                <div id="fullscreen-hazard-overlay" class="glass-overlay hidden">
+                    ⚠ <span id="hazard-overlay-text"></span>
+                </div>
+
+                <!-- ── Fullscreen Glass Controls ── -->
+                <div id="fs-controls-overlay" class="fs-glass-overlay hidden">
+                    <button class="btn primary" id="fs-btn-record-client">⏺ Browser</button>
+                    <button class="btn secondary" id="fs-btn-record-server">⏺ HD (Pi)</button>
+                    <button class="btn" id="fs-btn-mute">🔇 Mute</button>
+                    <div class="fs-camera-container">
+                        <button class="btn" id="fs-btn-camera">📸 Camera ↕</button>
+                        <div id="fs-slider-popup" class="fs-slider-popup hidden">
+                            <label>Angle: <span id="fs-slider-val">90</span>°</label>
+                            <input type="range" id="fs-servo-slider" min="0" max="180" value="90" step="5" class="servo-slider">
+                        </div>
+                    </div>
+                    <button class="btn primary motor-init-btn" id="fs-btn-motor-modal">🕹️ Motors</button>
+                    <button class="btn stop-btn" id="fs-btn-exit">⛶ Exit</button>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- ── Sensor Status ── -->
+        <section class="panel sensor-panel">
+            <div class="panel-header">
+                <span class="panel-title">Sensor Status</span>
+            </div>
+            <div class="sensor-grid">
+                <div class="sensor-card" id="gas-card">
+                    <div class="sensor-icon">💨</div>
+                    <div class="sensor-info">
+                        <span class="sensor-label">GAS (MQ-2)</span>
+                        <span class="sensor-value" id="gas-status">SAFE</span>
+                        <span class="sensor-analog" id="gas-analog">ADC: ---</span>
+                    </div>
+                    <div class="sensor-indicator safe" id="gas-indicator"></div>
+                </div>
+                <div class="sensor-card" id="fire-card">
+                    <div class="sensor-icon">🔥</div>
+                    <div class="sensor-info">
+                        <span class="sensor-label">FLAME SENSOR</span>
+                        <span class="sensor-value" id="fire-status">SAFE</span>
+                    </div>
+                    <div class="sensor-indicator safe" id="fire-indicator"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ── Radar Scanner ── -->
+        <section class="panel radar-panel">
+            <div class="panel-header">
+                <span class="panel-title">Forward Radar</span>
+                <span class="badge" id="radar-distance-badge">-- cm</span>
+            </div>
+            <div class="radar-container" id="radar-container">
+                <div class="radar-sweep"></div>
+                <div class="radar-blip hidden" id="radar-blip"></div>
+                <!-- Concentric rings -->
+                <div class="radar-ring ring-1"></div>
+                <div class="radar-ring ring-2"></div>
+                <div class="radar-ring ring-3"></div>
+            </div>
+            <div class="radar-warning hidden" id="radar-warning">⚠ DANGER: 20cm</div>
+        </section>
+
+        <!-- ── Camera Pan + Tilt Control ── -->
+        <section class="panel servo-panel">
+            <div class="panel-header">
+                <span class="panel-title">Camera Pan + Tilt</span>
+                <div style="display:flex; gap:0.5rem; align-items:center;">
+                    <span class="badge" id="servo-angle-badge">Pan: 90°</span>
+                    <span class="badge" id="tilt-angle-badge">Tilt: 90°</span>
+                </div>
+            </div>
+            <div class="servo-slider-section">
+                <!-- Pan (horizontal) -->
+                <label for="servo-slider" class="slider-label">↔ Pan: <span id="slider-val">90</span>°</label>
+                <input type="range" id="servo-slider" min="0" max="180" value="90" step="5" class="servo-slider">
+                <div class="servo-presets">
+                    <button class="btn preset-btn" id="btn-servo-0"   onclick="quickServo(0)">◀ Left</button>
+                    <button class="btn preset-btn active" id="btn-servo-90"  onclick="quickServo(90)">Center</button>
+                    <button class="btn preset-btn" id="btn-servo-180" onclick="quickServo(180)">Right ▶</button>
+                </div>
+
+                <!-- Tilt (vertical) -->
+                <label for="tilt-slider" class="slider-label" style="margin-top:0.8rem;">↕ Tilt: <span id="tilt-slider-val">90</span>°</label>
+                <input type="range" id="tilt-slider" min="30" max="150" value="90" step="5" class="servo-slider">
+                <div class="servo-presets">
+                    <button class="btn preset-btn" id="btn-tilt-30"  onclick="quickTilt(30)">▼ Down</button>
+                    <button class="btn preset-btn active" id="btn-tilt-90"  onclick="quickTilt(90)">Level</button>
+                    <button class="btn preset-btn" id="btn-tilt-150" onclick="quickTilt(150)">▲ Up</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ── Controls ── -->
+        <section class="panel controls-panel">
+            <div class="panel-header">
+                <span class="panel-title">Controls & Mission</span>
+                <div id="mission-status-dot" class="logo-dot hidden" title="Autonomous Patrol Active"></div>
+            </div>
+            <div class="controls-grid">
+                <!-- System Controls -->
+                <button class="btn primary" id="btn-record-client">⏺ Browser</button>
+                <button class="btn secondary" id="btn-record-server">⏺ HD (Pi)</button>
+                <button class="btn" id="btn-mute">🔇 Mute</button>
+                <button class="btn" id="btn-fullscreen">⛶ Fullscreen</button>
+                <button class="btn primary motor-init-btn" id="btn-motor-modal">🕹️ Motors</button>
+                <button class="btn" id="btn-intercom" title="2-Way Voice Intercom">🎙️ Intercom</button>
+                
+                <!-- Compact Mission Controls -->
+                <div class="mission-compact-group">
+                    <button class="btn btn-sm" id="btn-record-mission" title="Record Path">⏺ Path</button>
+                    <button class="btn btn-sm" id="btn-stop-mission-record" disabled title="Stop Recording Path">⏹ Stop</button>
+                    <button class="btn btn-sm secondary" id="btn-start-patrol" disabled title="Start Autonomous Patrol">▶ Patrol</button>
+                    <div class="repeat-selector-sm">
+                        <label>Reps:</label>
+                        <input type="number" id="patrol-repeats" value="1" min="1" max="10">
+                    </div>
+                </div>
+            </div>
+            <!-- Mission Progress Strip (Consolidated) -->
+            <div id="mission-progress" class="status-strip mini-strip hidden" style="margin-top: 10px;">
+                <span id="patrol-round-text">Round: 1 / 1</span>
+            </div>
+        </section>
+
+
+        <!-- ── Hazard Logs ── -->
+        <section class="panel logs-panel">
+            <div class="panel-header">
+                <span class="panel-title">Mission Intelligence</span>
+                <div class="panel-actions">
+                    <button class="btn-icon" id="btn-export-csv" title="Export Mission CSV">📥</button>
+                    <button class="btn-icon" id="btn-clear-mission" title="Clear Mission Data (New Session)">🧹</button>
+                    <button class="btn-icon" id="btn-clear-logs" title="Clear UI Logs">✕</button>
+                </div>
+            </div>
+            <div id="log-list" class="log-list">
+                <p class="log-placeholder">No events recorded yet…</p>
+            </div>
+        </section>
+
+
+    </main>
+
+    <!-- Draggable Motor Modal (Dynamic HUD) -->
+    <div id="motor-modal" class="motor-modal stealth-mode hidden">
+        
+        <div class="stealth-strip-inner">
+            <button class="stealth-close-btn" id="btn-close-motor-modal" title="Close HUD">✕</button>
+            <div class="status-indicator-mini">
+                <span id="dir-display">STOP</span>
+                <span id="spd-display">75%</span>
+            </div>
+
+            <!-- Sequential Horizontal Controls -->
+            <div class="stealth-controls">
+                <button class="dpad-btn fwd" id="btn-fwd" onmousedown="startMove('forward')" onmouseup="stopMove()" ontouchstart="startMove('forward')" ontouchend="stopMove()">▲</button>
+                <button class="dpad-btn left" id="btn-left" onmousedown="startMove('left')" onmouseup="stopMove()" ontouchstart="startMove('left')" ontouchend="stopMove()">◀</button>
+                <button class="dpad-btn stop-btn" id="btn-stop" onclick="sendStop()">■</button>
+                <button class="dpad-btn right" id="btn-right" onmousedown="startMove('right')" onmouseup="stopMove()" ontouchstart="startMove('right')" ontouchend="stopMove()">▶</button>
+                <button class="dpad-btn bwd" id="btn-bwd" onmousedown="startMove('backward')" onmouseup="stopMove()" ontouchstart="startMove('backward')" ontouchend="stopMove()">▼</button>
+                
+                <div class="speed-section horizontal">
+                    <input type="range" id="speed-slider" min="20" max="100" value="75" step="5" class="speed-slider-horizontal">
+                </div>
+
+                <button class="brake-btn-mini" id="btn-brake" onclick="emergencyBrake()">🛑 STOP</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Secret audio element for Robot-to-Browser intercom -->
+    <audio id="robot-audio" autoplay class="hidden"></audio>
+
+    <script src="main.js"></script>
+</body>
+</html>
