@@ -24,7 +24,6 @@ To build a remotely controlled surveillance robot capable of safely operating in
 | **Ultrasonic Radar** | HC-SR04 reads every 200ms, auto-stops robot if obstacle < 20cm |
 | **Obstacle Auto-Brake** | Robot halts automatically and locks until operator resumes |
 | **2-Way Intercom** | Operator mic → robot speakers; robot USB mic → browser |
-| **AI Sentinel** | SSD MobileNet V2 person detection with auto-recording trigger |
 | **Motion Detection** | Software frame-diff motion alert with video recording |
 | **Mission Memory** | Record a drive path and replay it autonomously |
 | **Server Recording** | Pi-side H.264 video recording with hazard metadata |
